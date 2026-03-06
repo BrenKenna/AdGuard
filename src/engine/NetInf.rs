@@ -1,9 +1,9 @@
 use tun::{Configuration, Device};
-use std::io::{Read, Write};
+use std::io::{ Read };
 
 /**
 Class for building TUN interfaces
- configured with IP & subnetmask
+ configured with IP & subnet mask
 **/
 pub (in crate::engine) struct NetInfBuilder {
     ip_addr: Option<String>,
