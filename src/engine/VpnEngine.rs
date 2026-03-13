@@ -57,4 +57,6 @@ impl<F: DomainFilter + Send + Sync + 'static> VpnEngine<F> {
     pub fn should_block(&self, domain: &str) -> bool {
         self.filter.is_blocked(domain)
     }
+    
+    
 }
