@@ -1,7 +1,12 @@
-use crate::filtering::DomainFilter::DomainFilter;
 use std::sync::Arc;
+use std::os::unix::io::FromRawFd;
+use log::{info, warn};
 
+use crate::filtering::DomainFilter::DomainFilter;
+use crate::dns::DnsInterceptor::DnsInterceptor;
+use crate::stats;
 use crate::engine::NetInf::NetInf;
+
 
 /**
 Building to support building VPN Engines
@@ -54,9 +59,41 @@ impl<F: DomainFilter + Send + Sync + 'static> VpnEngine<F> {
         Self { filter, net_inf }
     }
 
-    pub fn should_block(&self, domain: &str) -> bool {
+    fn should_block(&self, domain: &str) -> bool {
         self.filter.is_blocked(domain)
     }
-    
-    
+
+    pub fn run(&self, fd:i32) {
+
+        let mut dnsInterceptor = DnsInterceptor::new();
+
+        let mut dev = unsafe {
+            std::os::unix::io::from_raw_fd(fd)
+        }
+        let mut buf = [0u8; 2000];
+
+        loop {
+            match dev.read(&mut buf) {
+                Ok(n) => {
+                    let packet_data = &buf[..n];
+                    if let Some(domain) =
+                        dnsInterceptor.extract_domain(packet_data) {
+                            info!("DNS packet from {}", domain);
+                            if self.should_block(&domain) {
+                                stats::increment_blocked();
+                                warn!("Blocking domain:\t'{}'", domain);
+                                let resp = dnsInterceptor.build_block_response(packet_data);
+                                let resp_packet = dnsInterceptor.build_payload(packet_data, &resp);
+
+                                let _ = dev.write_all(&resp_packet);
+                            }
+
+                            // Forward non blocked dns query
+                    }
+
+                    // Forward non dns query
+                }
+            }
+        }
+    }
 }

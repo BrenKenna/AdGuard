@@ -1,6 +1,8 @@
 use tun::{Configuration, Device};
 use std::io::{ Read };
 
+use log::{info, error};
+
 /**
 Class for building TUN interfaces
  configured with IP & subnet mask
@@ -142,10 +144,10 @@ impl NetInf {
         if let Some(dev) = self.device.as_mut() {
             loop {
                 let n = dev.read(&mut buf).unwrap();
-                println!("packet size {}", n);
+                info!("packet size {}", n);
             }
         } else {
-            println!("Device not initialized");
+            error!("Device not initialized");
         }
     }
 }

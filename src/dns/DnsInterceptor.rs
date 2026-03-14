@@ -15,7 +15,7 @@ impl DnsInterceptor {
         }
     }
 
-    pub fn extract_domain(packet: &[u8]) -> Option<String> {
+    pub fn extract_domain(&self, packet: &[u8]) -> Option<String> {
         let mut val:Option<String> = None;
         match Packet::parse(packet) {
             Ok(dns) =>
